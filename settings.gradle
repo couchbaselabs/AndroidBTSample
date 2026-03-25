@@ -24,3 +24,10 @@ dependencyResolutionManagement {
 
 rootProject.name = "BT Sample"
 include ':app'
+
+includeBuild('C:/Development/couchbase-lite-java-ee-root/ee/android') {
+    dependencySubstitution {
+        substitute module('com.couchbase.lite:couchbase-lite-android-ee') using project(':lib')
+    }
+}
+

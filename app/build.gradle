@@ -4,16 +4,12 @@ plugins {
 
 android {
     namespace 'com.example.btsampleapp'
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.example.btsampleapp"
-        minSdk 30
-        targetSdk 36
+        minSdk 29
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
@@ -38,5 +34,5 @@ dependencies {
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
-    implementation files('/Users/aniket.singh/Desktop/projects/couchbase-lite-java-ee-root/ee/android/lib/build/outputs/aar/couchbase-lite-android-ee-3.3.0-SNAPSHOT-release.aar')
+    implementation 'com.couchbase.lite:couchbase-lite-android-ee:3.3.0-SNAPSHOT'
 }
