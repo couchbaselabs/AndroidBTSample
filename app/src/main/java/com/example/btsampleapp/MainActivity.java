@@ -24,6 +24,8 @@ public class MainActivity extends AppCompatActivity {
     private static final String DB_NAME = "multipeer-test";
     private static final String PEER_GROUP = "com.example.multipeertest";
     private static final String IDENTITY_LABEL = "com.example.multipeertest.identity";
+    private static final String PREFS_NAME = "com.example.multipeertest.prefs";
+    private static final String PREF_COMMON_NAME = "identity_common_name";
 
     private Database database;
     private Collection collection;
@@ -161,6 +163,17 @@ public class MainActivity extends AppCompatActivity {
         tvPeers.setText("None");
     }
 
+    private String getCommonName() {
+        android.content.SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String cn = prefs.getString(PREF_COMMON_NAME, null);
+        if (cn == null) {
+            String raw = UUID.randomUUID().toString().replace("-", "");
+            cn = "A-" + raw.substring(0, 6).toUpperCase();
+            prefs.edit().putString(PREF_COMMON_NAME, cn).apply();
+        }
+        return cn;
+    }
+
     private TLSIdentity getOrCreateIdentity() throws CouchbaseLiteException {
         TLSIdentity existing = TLSIdentity.getIdentity(IDENTITY_LABEL);
         if (existing != null && existing.getExpiration().after(new Date())) {
@@ -174,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
         cal.add(Calendar.YEAR, 2);
 
         Map<String, String> attrs = new HashMap<>();
-        attrs.put(TLSIdentity.CERT_ATTRIBUTE_COMMON_NAME, "MultipeerTest");
+        attrs.put(TLSIdentity.CERT_ATTRIBUTE_COMMON_NAME, getCommonName());
 
         Set<KeyUsage> usages = new HashSet<>();
         usages.add(KeyUsage.CLIENT_AUTH);
