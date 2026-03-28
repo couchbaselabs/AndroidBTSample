@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isRunning = false;
 
     // UI
-    private TextView tvStatus, tvPeersHeader, tvPeers, tvDocsHeader, tvDocs;
+    private TextView tvStatus, tvPeersHeader, tvPeers, tvDocsHeader, tvDocs, tvIDHeader, tvID;
     private Button btnToggle, btnAddDoc;
 
     private ActivityResultLauncher<String[]> permissionLauncher;
@@ -53,6 +53,8 @@ public class MainActivity extends AppCompatActivity {
         tvDocs        = findViewById(R.id.tvDocs);
         btnToggle     = findViewById(R.id.btnToggle);
         btnAddDoc     = findViewById(R.id.btnAddDoc);
+        tvIDHeader    = findViewById(R.id.tvIDHeader);
+        tvID          = findViewById(R.id.tvID);
 
         permissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestMultiplePermissions(),
@@ -132,6 +134,7 @@ public class MainActivity extends AppCompatActivity {
 
             replicator = new MultipeerReplicator(config);
 
+            tvID.setText(replicator.getPeerId().toString());
 
             replicator.addStatusListener(status -> runOnUiThread(() -> {
                 String state = status.isActive() ? "Active" : "Inactive";
@@ -140,7 +143,10 @@ public class MainActivity extends AppCompatActivity {
             }));
 
 
-            replicator.addPeerDiscoveryStatusListener(event -> runOnUiThread(this::refreshPeers));
+            replicator.addPeerDiscoveryStatusListener(event -> {
+                Log.d("MainActivity", "Peer discovery event: " + event.isOnline());
+                runOnUiThread(this::refreshPeers);
+            });
 
             replicator.start();
             isRunning = true;
@@ -235,14 +241,14 @@ public class MainActivity extends AppCompatActivity {
     private void refreshPeers() {
         if (replicator == null) return;
 
-        Set<?> neighbors = replicator.getNeighborPeers();
+        Set<PeerInfo.PeerId> neighbors = replicator.getNeighborPeers();
         tvPeersHeader.setText("Connected Peers (" + neighbors.size() + "):");
 
         if (neighbors.isEmpty()) {
             tvPeers.setText("None");
         } else {
             StringBuilder sb = new StringBuilder();
-            for (Object peer : neighbors) {
+            for (PeerInfo.PeerId peer : neighbors) {
                 sb.append("• ").append(peer.toString()).append("\n");
             }
             tvPeers.setText(sb.toString());
