@@ -15,7 +15,6 @@ import androidx.core.content.ContextCompat;
 
 import com.couchbase.lite.*;
 import com.couchbase.lite.Collection;
-import com.couchbase.lite.internal.permissions.BlePermissionRequirements;
 
 import java.util.*;
 
@@ -96,15 +95,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkPermissionsAndStart() {
-        Set<String> missingPermissions = new HashSet<>(BlePermissionRequirements.getMissingPermissions(this));
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.NEARBY_WIFI_DEVICES) != PackageManager.PERMISSION_GRANTED) {
-                missingPermissions.add(Manifest.permission.NEARBY_WIFI_DEVICES);
-            }
+        replicator = createReplicator();
+        if(replicator == null) {
+            return;
         }
 
-
+        Set<String> missingPermissions = replicator.getMissingPermissions(this);
         if (!missingPermissions.isEmpty()) {
             permissionLauncher.launch(missingPermissions.toArray(new String[0]));
         } else {
@@ -112,30 +108,36 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void startReplicator() {
+    private MultipeerReplicator createReplicator()
+    {
+        MultipeerCertificateAuthenticator authenticator =
+                new MultipeerCertificateAuthenticator((peer, certs) -> true);
+
+        MultipeerCollectionConfiguration colConfig =
+                new MultipeerCollectionConfiguration.Builder(collection).build();
+
+        MultipeerReplicatorConfiguration.Builder configBuilder =
+                new MultipeerReplicatorConfiguration.Builder()
+                        .setPeerGroupID(PEER_GROUP)
+                        .setTransports(Set.of(MultipeerTransport.BLUETOOTH))
+                        .setAuthenticator(authenticator)
+                        .setCollections(Collections.singleton(colConfig));
+
         try {
             TLSIdentity identity = getOrCreateIdentity();
-
-
-            MultipeerCertificateAuthenticator authenticator =
-                    new MultipeerCertificateAuthenticator((peer, certs) -> true);
-
-            MultipeerCollectionConfiguration colConfig =
-                    new MultipeerCollectionConfiguration.Builder(collection).build();
-
-            MultipeerReplicatorConfiguration config =
-                    new MultipeerReplicatorConfiguration.Builder()
-                            .setPeerGroupID(PEER_GROUP)
-                            .setIdentity(identity)
-                            .setTransports(Set.of(MultipeerTransport.BLUETOOTH))
-                            .setAuthenticator(authenticator)
-                            .setCollections(Collections.singleton(colConfig))
-                            .build();
-
-            replicator = new MultipeerReplicator(config);
-
+            configBuilder.setIdentity(identity);
+            MultipeerReplicator replicator = new MultipeerReplicator(configBuilder.build());
             tvID.setText(replicator.getPeerId().toString());
+            return replicator;
+        } catch(CouchbaseLiteException e) {
+            updateStatus("Start Error: " + e.getMessage());
+        }
 
+        return null;
+    }
+
+    private void startReplicator() {
+        try {
             replicator.addStatusListener(status -> runOnUiThread(() -> {
                 String state = status.isActive() ? "Active" : "Inactive";
                 String error = status.getError() != null ? " | Error: " + status.getError().getMessage() : "";
@@ -151,7 +153,6 @@ public class MainActivity extends AppCompatActivity {
             replicator.start();
             isRunning = true;
             btnToggle.setText("Stop");
-
         } catch (Exception e) {
             updateStatus("Start Error: " + e.getMessage());
         }
