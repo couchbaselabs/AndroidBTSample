@@ -3,13 +3,13 @@ plugins {
 }
 
 android {
-    namespace 'com.example.btsampleapp'
-    compileSdk 36
+    namespace = 'com.example.btsampleapp'
+    compileSdk = 36
 
     defaultConfig {
         applicationId "com.example.btsampleapp"
-        minSdk 29
-        targetSdk 36
+        minSdk = 29
+        targetSdk = 36
         versionCode 1
         versionName "1.0"
 
@@ -34,5 +34,5 @@ dependencies {
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
-    implementation 'com.couchbase.lite:couchbase-lite-android-ee:3.3.0-SNAPSHOT'
+    implementation libs.cbl
 }
